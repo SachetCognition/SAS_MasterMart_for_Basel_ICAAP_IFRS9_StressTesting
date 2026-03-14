@@ -98,7 +98,7 @@ def run_pipeline(config: Config, datasets: dict[str, pl.DataFrame]) -> dict[str,
     # Build customer elimination sets from IW extract for inter-company elimination
     from lib.lookups import build_cust_elim_format
 
-    cust_elim_df = datasets.get("vi_iacbs_cust_elim_upd", pl.DataFrame())
+    cust_elim_df = datasets.get(f"vi_iacbs_cust_elim_upd_{rpt}", pl.DataFrame())
     cust_elim_set = build_cust_elim_format(cust_elim_df) if not cust_elim_df.is_empty() else set()
 
     stg_adj = f04_iw_adj.run(
@@ -106,8 +106,16 @@ def run_pipeline(config: Config, datasets: dict[str, pl.DataFrame]) -> dict[str,
         cust_elim_combined=cust_elim_set,
         cust_elim_consolid=cust_elim_set,
     )
-    stg_sgp = f05_sgp_xls.run(config, datasets)
-    stg_nostro = f06_sgp_nostro.run(config, datasets.get("sgp_nostro", pl.DataFrame()))
+    # SGP data from import_all_sgp uses type_name keys (IMEX, MM, Loan, FX, Nostro);
+    # f05_sgp_xls expects sgp_-prefixed keys; remap here.
+    sgp_datasets = {
+        "sgp_imex": datasets.get("IMEX", pl.DataFrame()),
+        "sgp_mm": datasets.get("MM", pl.DataFrame()),
+        "sgp_loan": datasets.get("Loan", pl.DataFrame()),
+        "sgp_fx": datasets.get("FX", pl.DataFrame()),
+    }
+    stg_sgp = f05_sgp_xls.run(config, sgp_datasets)
+    stg_nostro = f06_sgp_nostro.run(config, datasets.get("Nostro", pl.DataFrame()))
     stg_adj_delta = f07_adj_delta.run(config, err_master_df)
     stg_ns_delta = f08_nonsys_delta.run(
         config,
