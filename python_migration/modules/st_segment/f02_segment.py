@@ -83,7 +83,7 @@ def run(config: Config, fact_rwa: pl.DataFrame) -> dict[str, pl.DataFrame]:
     elif "PORT_CD" in fact_rwa.columns:
         # Fallback: use PORT_CD directly
         fact_rwa = fact_rwa.with_columns(
-            pl.when(pl.col("PORT_CD").is_in(["Ia", "Ib", "Ic", "Id"]))
+            pl.when(pl.col("PORT_CD").is_in(["Ia", "Ib", "Ic", "Id", "IIa", "IIb", "IIc", "III"]))
             .then(pl.lit("SOVEREIGN_PSE_MDB"))
             .when(pl.col("PORT_CD") == "XII")
             .then(pl.lit("CASH"))
@@ -97,7 +97,7 @@ def run(config: Config, fact_rwa: pl.DataFrame) -> dict[str, pl.DataFrame]:
             .then(
                 pl.col("PORT_CD").cast(pl.Utf8).replace(_OFFBAL_SEGMENTS, default="NON_RML")
             )
-            .when(pl.col("PORT_CD").is_in(["VI", "VIIIa", "VIIIb"]))
+            .when(pl.col("PORT_CD").is_in(["VI", "VIIa", "VIIb", "VIIIa", "VIIIb"]))
             .then(pl.lit("NON_RML"))
             .otherwise(pl.lit("EXCEPTION"))
             .alias("ST_SEGMENT")

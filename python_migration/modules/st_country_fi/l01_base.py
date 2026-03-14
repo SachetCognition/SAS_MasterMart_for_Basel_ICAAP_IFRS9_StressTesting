@@ -65,27 +65,6 @@ def run(
     cust_sub = "CUST_SUB_TYP_CD" if "CUST_SUB_TYP_CD" in df.columns else None
     cust_sic = "CUST_SIC_CD" if "CUST_SIC_CD" in df.columns else None
 
-    flag_expr = pl.lit(0)
-    if cust_sub:
-        flag_expr = (
-            pl.when(pl.col(cust_sub).is_in(list(_BANK_CUST_SUB_TYPES)))
-            .then(pl.lit(1))
-            .when(pl.col(cust_sub).is_in(list(_SEC_CUST_SUB_TYPES)))
-            .then(pl.lit(2))
-            .otherwise(pl.lit(0))
-        )
-    if cust_sic:
-        flag_expr = (
-            pl.when(pl.col(flag_expr.meta.output_name() if hasattr(flag_expr, "meta") else "FLAG_BK_FI") > 0)
-            .then(flag_expr)
-            .when(pl.col(cust_sic).is_in(list(_BANK_SIC_CODES)))
-            .then(pl.lit(3))
-            .when(pl.col(cust_sic).is_in(list(_SEC_SIC_CODES)))
-            .then(pl.lit(5))
-            .otherwise(pl.lit(0))
-        )
-
-    # Simplified classification
     df = df.with_columns(pl.lit(1).alias("FLAG_BK_FI"))
     if cust_sub:
         df = df.with_columns(
@@ -100,6 +79,15 @@ def run(
                 .then(pl.lit(5))
                 .otherwise(pl.lit(4))
             )
+            .alias("FLAG_BK_FI")
+        )
+    elif cust_sic:
+        df = df.with_columns(
+            pl.when(pl.col(cust_sic).is_in(list(_BANK_SIC_CODES)))
+            .then(pl.lit(3))
+            .when(pl.col(cust_sic).is_in(list(_SEC_SIC_CODES)))
+            .then(pl.lit(5))
+            .otherwise(pl.lit(4))
             .alias("FLAG_BK_FI")
         )
 

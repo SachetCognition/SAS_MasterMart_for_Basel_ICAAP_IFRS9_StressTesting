@@ -92,7 +92,7 @@ def run_pipeline(config: Config, datasets: dict[str, pl.DataFrame]) -> dict[str,
     car_iw_combined = pl.concat(car_frames, how="diagonal") if car_frames else pl.DataFrame()
 
     stg_derv = f03_derivative.run(config, xls_derv)
-    sgp_imex = datasets.get("sgp_imex", pl.DataFrame())
+    sgp_imex = datasets.get("IMEX", pl.DataFrame())
     err_master_df = xls_err.get("xls_st_manual_master", pl.DataFrame())
 
     # Build customer elimination sets from IW extract for inter-company elimination
