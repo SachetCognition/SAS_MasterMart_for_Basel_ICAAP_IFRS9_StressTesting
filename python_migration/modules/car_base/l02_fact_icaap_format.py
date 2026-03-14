@@ -49,18 +49,13 @@ def run(config: Config, fact_rwa: pl.DataFrame) -> pl.DataFrame:
 
     df = fact_rwa.clone()
 
-    # Apply PORT_CD → ICAAP_PORTCD_DESC
+    # Apply PORT_CD → ICAAP_PORTCD_DESC (use output_column to avoid overwriting PORT_CD)
     if "PORT_CD" in df.columns:
-        df = apply_lookup(df, "PORT_CD", PORTCD_MAP, default="99. ###")
-        # Rename the lookup result column
-        if "PORT_CD_lookup" in df.columns:
-            df = df.rename({"PORT_CD_lookup": "ICAAP_PORTCD_DESC"})
+        df = apply_lookup(df, "PORT_CD", PORTCD_MAP, output_column="ICAAP_PORTCD_DESC", default="99. ###")
 
-    # Apply ICAAP_BUS_UNIT → ICAAP_BU_DESC
+    # Apply ICAAP_BUS_UNIT → ICAAP_BU_DESC (use output_column to avoid overwriting)
     if "ICAAP_BUS_UNIT" in df.columns:
-        df = apply_lookup(df, "ICAAP_BUS_UNIT", BUSUNIT_MAP, default="9.0 Other")
-        if "ICAAP_BUS_UNIT_lookup" in df.columns:
-            df = df.rename({"ICAAP_BUS_UNIT_lookup": "ICAAP_BU_DESC"})
+        df = apply_lookup(df, "ICAAP_BUS_UNIT", BUSUNIT_MAP, output_column="ICAAP_BU_DESC", default="9.0 Other")
 
     # Derive ICAAP_ON_OFF indicator based on PORT_CD
     if "PORT_CD" in df.columns:

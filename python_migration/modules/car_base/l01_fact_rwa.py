@@ -216,17 +216,21 @@ def _resolve_notch(df: pl.DataFrame) -> pl.DataFrame:
         pl.coalesce(coalesce_exprs).fill_null(11).cast(pl.Int32).alias("NOTCH")
     )
 
+    # Flag rated vs unrated — must be computed BEFORE dropping notch source columns
+    rated_exprs = [pl.col(c) for c in available if c != "_notch_proxy"]
+    if rated_exprs:
+        df = df.with_columns(
+            pl.when(pl.coalesce(rated_exprs).is_not_null())
+            .then(pl.lit("RATED"))
+            .otherwise(pl.lit("UNRATED"))
+            .alias("FLAG_RATED")
+        )
+    else:
+        df = df.with_columns(pl.lit("UNRATED").alias("FLAG_RATED"))
+
     # Clean up temporary columns
     drop_cols = [c for c in ["_notch_proxy"] + available if c in df.columns]
     df = df.drop(drop_cols)
-
-    # Flag rated vs unrated
-    df = df.with_columns(
-        pl.when(pl.coalesce([pl.col(c) if c in df.columns else pl.lit(None) for c in notch_cols[:1]]).is_not_null())
-        .then(pl.lit("RATED"))
-        .otherwise(pl.lit("UNRATED"))
-        .alias("FLAG_RATED")
-    )
 
     return df
 

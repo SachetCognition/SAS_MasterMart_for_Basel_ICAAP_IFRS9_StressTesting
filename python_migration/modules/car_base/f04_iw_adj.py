@@ -298,8 +298,8 @@ def run(
     ea_codes = ["EA3_0", "EA8_0", "EA8_1", "EA104", "EA202", "EA203"]
     for ea_code in ea_codes:
         adj_dict = error_adjustment(
-            err_df=err_master,
-            iw_table="CAR",
+            err_tbl=err_master,
+            tbl="CAR",
             mode=ea_code,
             dt_rpt_month=config.dt_rpt_month,
         )

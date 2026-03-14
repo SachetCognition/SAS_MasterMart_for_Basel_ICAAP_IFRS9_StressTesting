@@ -261,7 +261,7 @@ def import_multi_sheet(
     results: dict[str, pl.DataFrame] = {}
 
     for output_name, config in sheet_configs.items():
-        sheet_name = config.pop("sheet", output_name)
+        sheet_name = config.get("sheet", output_name)
         logger.info("Importing sheet '%s' from %s -> %s", sheet_name, path, output_name)
 
         try:

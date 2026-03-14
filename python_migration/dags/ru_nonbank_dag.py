@@ -65,8 +65,7 @@ def run_pipeline(config: Config) -> dict[str, pl.DataFrame]:
 
     # Report
     logger.info("RU_NONBANK DAG: Report")
-    summary = r01_summary.run(config, npl_fact)
-    results.update(summary)
+    r01_summary.run(config, npl_fact, npl_ratios)
 
     logger.info("RU_NONBANK DAG: Pipeline complete")
     return results

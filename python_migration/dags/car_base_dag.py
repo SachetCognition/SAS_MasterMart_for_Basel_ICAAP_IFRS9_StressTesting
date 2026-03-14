@@ -80,17 +80,22 @@ def run_pipeline(config: Config, datasets: dict[str, pl.DataFrame]) -> dict[str,
     logger.info("CAR_BASE DAG: PART 3 - Formulate & Transform")
     stg_iw = f00_iw_to_stg.run(config, datasets)
     stg_derv = f03_derivative.run(config, xls_derv)
+    sgp_imex = datasets.get("sgp_imex", pl.DataFrame())
     stg_adj = f04_iw_adj.run(
-        config, stg_iw,
+        config, stg_iw, sgp_imex,
         xls_err.get("manual_adj", pl.DataFrame()),
     )
     stg_sgp = f05_sgp_xls.run(config, datasets)
-    stg_nostro = f06_sgp_nostro.run(config, datasets)
-    stg_adj_delta = f07_adj_delta.run(config, stg_adj)
+    stg_nostro = f06_sgp_nostro.run(config, datasets.get("sgp_nostro", pl.DataFrame()))
+    stg_adj_delta = f07_adj_delta.run(config, stg_iw, stg_adj)
     stg_ns_delta = f08_nonsys_delta.run(config, xls_nonsys)
-    stg_hkcbf = f09_hkcbf_adj_n_delta.run(config, datasets)
-    stg_cbic = f10_cbic_adj.run(config, datasets)
-    rating_lookups = f11_ccp_bonds_rating.run(config, xls_rating)
+    stg_hkcbf = f09_hkcbf_adj_n_delta.run(config, stg_adj)
+    stg_cbic = f10_cbic_adj.run(config, stg_adj)
+    rating_lookups = f11_ccp_bonds_rating.run(
+        config,
+        xls_rating.get("cc_rating", pl.DataFrame()),
+        xls_rating.get("bonds_rating", pl.DataFrame()),
+    )
     stg_ref = f12_ref_list_from_bu.run(config, xls_ref, datasets)
 
     # Collect all staging datasets
@@ -109,7 +114,10 @@ def run_pipeline(config: Config, datasets: dict[str, pl.DataFrame]) -> dict[str,
 
     # PART 4: Load to FACT
     logger.info("CAR_BASE DAG: PART 4 - Load to FACT")
-    fact_rwa = l01_fact_rwa.run(config, staging)
+    notch_cc_map = rating_lookups.get("notch_cc_map", {})
+    notch_bd_map = rating_lookups.get("notch_bd_map", {})
+    ref_list_df = stg_ref if isinstance(stg_ref, pl.DataFrame) else pl.DataFrame()
+    fact_rwa = l01_fact_rwa.run(config, staging, notch_cc_map, notch_bd_map, ref_list_df)
     fact_icaap = l02_fact_icaap_format.run(config, fact_rwa)
     fact_icaap_info = l03_fact_icaap_info.run(config, fact_icaap)
 
