@@ -192,6 +192,8 @@ def _resolve_notch(df: pl.DataFrame) -> pl.DataFrame:
                 "APPL_RISK_WEIGHT": [float(k) for k in _RW_TO_NOTCH],
                 "_notch_proxy": list(_RW_TO_NOTCH.values()),
             })
+            # Ensure matching dtypes (source may be Int32/Int64)
+            df = df.with_columns(pl.col("APPL_RISK_WEIGHT").cast(pl.Float64))
             df = df.join(
                 rw_map_df,
                 on="APPL_RISK_WEIGHT",
@@ -213,6 +215,8 @@ def _resolve_notch(df: pl.DataFrame) -> pl.DataFrame:
             "APPL_RISK_WEIGHT": [float(k) for k in _RW_TO_NOTCH],
             "_notch_proxy": list(_RW_TO_NOTCH.values()),
         })
+        # Ensure matching dtypes (source may be Int32/Int64)
+        df = df.with_columns(pl.col("APPL_RISK_WEIGHT").cast(pl.Float64))
         df = df.join(rw_map_df, on="APPL_RISK_WEIGHT", how="left")
         coalesce_exprs.append(pl.col("_notch_proxy"))
 

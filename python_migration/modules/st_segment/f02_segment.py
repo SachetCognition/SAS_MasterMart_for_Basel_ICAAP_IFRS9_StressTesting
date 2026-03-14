@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # Segment routing based on ICAAP_PORTCD_DESC prefix (SAS lines 10-50)
 _SEGMENT_RULES: list[tuple[str, list[str]]] = [
     ("SOVEREIGN_PSE_MDB", ["01.", "02.", "03."]),
-    ("CASH", ["07."]),
+    ("CASH", ["12."]),
     ("PAST_DUE", ["10."]),
     ("BANK_FI", ["04."]),
     ("RML", ["05."]),
@@ -77,7 +77,7 @@ def run(config: Config, fact_rwa: pl.DataFrame) -> dict[str, pl.DataFrame]:
         fact_rwa = fact_rwa.with_columns(
             pl.when(pl.col("PORT_CD").is_in(["Ia", "Ib", "Ic", "Id"]))
             .then(pl.lit("SOVEREIGN_PSE_MDB"))
-            .when(pl.col("PORT_CD") == "VII")
+            .when(pl.col("PORT_CD") == "XII")
             .then(pl.lit("CASH"))
             .when(pl.col("PORT_CD") == "X")
             .then(pl.lit("PAST_DUE"))

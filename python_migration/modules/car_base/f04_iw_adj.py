@@ -55,14 +55,14 @@ def _adj_3_0001(df: pl.DataFrame, sgp_imex: pl.DataFrame) -> pl.DataFrame:
     if "ACCT_ID" not in short_term_accts.columns or "ACCT_ID" not in df.columns:
         return df
 
-    short_term_set = set(short_term_accts["ACCT_ID"].to_list())
+    short_term_list = short_term_accts["ACCT_ID"].to_list()
     df = df.with_columns(
-        pl.when(pl.col("ACCT_ID").is_in(short_term_set))
+        pl.when(pl.col("ACCT_ID").is_in(short_term_list))
         .then(pl.lit("Y"))
         .otherwise(pl.col("SHORT_TERM_CLAIM_IND") if "SHORT_TERM_CLAIM_IND" in df.columns else pl.lit(None))
         .alias("SHORT_TERM_CLAIM_IND")
     )
-    logger.info("Adj 3.0001: Updated SHORT_TERM_CLAIM_IND for %d accounts", len(short_term_set))
+    logger.info("Adj 3.0001: Updated SHORT_TERM_CLAIM_IND for %d accounts", len(short_term_list))
     return df
 
 

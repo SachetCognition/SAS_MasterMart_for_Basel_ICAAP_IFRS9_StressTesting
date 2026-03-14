@@ -47,7 +47,13 @@ def run(config: Config, fact_rwa: pl.DataFrame) -> dict[str, pl.DataFrame]:
             if port_col:
                 seg_df = fact_rwa.filter(~pl.col(port_col).is_in(list(assigned)))
             else:
-                seg_df = pl.DataFrame()
+                seg_df = fact_rwa
+            # Exclude records already assigned to indicator-based segments
+            # (PRTY_INV and NBMCE) to prevent double-counting
+            if "IND_PROPERTY_INV_n_DEV" in seg_df.columns:
+                seg_df = seg_df.filter(pl.col("IND_PROPERTY_INV_n_DEV") != 1)
+            if "IND_NBMCE_GRP" in seg_df.columns:
+                seg_df = seg_df.filter(pl.col("IND_NBMCE_GRP") != 1)
         else:
             seg_df = pl.DataFrame()
         results[f"rst_{seg_name.lower()}"] = seg_df

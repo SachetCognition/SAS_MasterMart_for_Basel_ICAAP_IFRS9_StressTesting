@@ -105,16 +105,21 @@ def _select_target_rating(df: pl.DataFrame, group_cols: list[str]) -> pl.DataFra
     if rated.is_empty():
         return df.with_columns(pl.lit(0).alias("flag_target")).drop("_row_idx")
 
-    # Add agency priority
+    # Add agency priority via join to avoid replace type-mismatch issues
+    # (replace on Utf8 column with int values leaves unmatched strings unconverted,
+    #  causing cast(pl.Int32) to fail on non-numeric agency names)
     if "RATING_AGENCY" in rated.columns:
+        agency_map_df = pl.DataFrame({
+            "_agency_name": list(_AGENCY_PRIORITY.keys()),
+            "_agency_pri": list(_AGENCY_PRIORITY.values()),
+        })
         rated = rated.with_columns(
-            pl.col("RATING_AGENCY").cast(pl.Utf8).str.to_uppercase()
-            .replace(_AGENCY_PRIORITY, default=99)
-            .cast(pl.Int32)
-            .alias("_agency_pri")
+            pl.col("RATING_AGENCY").cast(pl.Utf8).str.to_uppercase().alias("_agency_name")
         )
+        rated = rated.join(agency_map_df, on="_agency_name", how="left").drop("_agency_name")
+        rated = rated.with_columns(pl.col("_agency_pri").fill_null(99).cast(pl.Int32))
     else:
-        rated = rated.with_columns(pl.lit(99).alias("_agency_pri"))
+        rated = rated.with_columns(pl.lit(99).cast(pl.Int32).alias("_agency_pri"))
 
     # Use window functions to select the most conservative rating per group.
     # Most conservative = highest NOTCH.  On tie, prefer lower agency priority.
