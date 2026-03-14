@@ -123,7 +123,8 @@ def run_pipeline(config: Config, datasets: dict[str, pl.DataFrame]) -> dict[str,
         xls_nonsys.get("ns_hkcbf", pl.DataFrame()),
     )
     stg_hkcbf = f09_hkcbf_adj_n_delta.run(config, stg_adj)
-    stg_cbic = f10_cbic_adj.run(config, stg_adj)
+    cbic_bank_mapping = xls_err.get("xls_cbic_bank_cust_id", None)
+    stg_cbic = f10_cbic_adj.run(config, stg_adj, cbic_bank_mapping=cbic_bank_mapping)
     rating_lookups = f11_ccp_bonds_rating.run(
         config,
         xls_rating.get("cc_rating", pl.DataFrame()),

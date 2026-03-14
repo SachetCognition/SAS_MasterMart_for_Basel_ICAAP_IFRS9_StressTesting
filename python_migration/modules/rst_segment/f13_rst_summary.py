@@ -32,7 +32,7 @@ def run(config: Config, rst_combined: pl.DataFrame) -> dict[str, pl.DataFrame]:
     output_dir.mkdir(parents=True, exist_ok=True)
     rpt = config.rpt_month
 
-    segment_col = "ST_SEGMENT" if "ST_SEGMENT" in rst_combined.columns else None
+    segment_col = "RST_SEGMENT" if "RST_SEGMENT" in rst_combined.columns else None
     if segment_col:
         agg_exprs: list[pl.Expr] = [pl.len().alias("COUNT")]
         for i in range(4):

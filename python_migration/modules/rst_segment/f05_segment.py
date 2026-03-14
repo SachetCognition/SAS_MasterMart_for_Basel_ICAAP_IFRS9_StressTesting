@@ -56,6 +56,8 @@ def run(config: Config, fact_rwa: pl.DataFrame) -> dict[str, pl.DataFrame]:
                 seg_df = seg_df.filter(pl.col("IND_NBMCE_GRP") != 1)
         else:
             seg_df = pl.DataFrame()
+        if not seg_df.is_empty():
+            seg_df = seg_df.with_columns(pl.lit(seg_name).alias("RST_SEGMENT"))
         results[f"rst_{seg_name.lower()}"] = seg_df
         logger.info("F05 RST: Segment %s: %d rows", seg_name, len(seg_df))
     return results
