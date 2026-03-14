@@ -83,5 +83,8 @@ def run(
         # EAD = CRM (derivatives are fully on-balance equivalent)
         df = df.with_columns(pl.col(f"CRM_{suffix}").alias(f"EAD_{suffix}"))
 
+        # EL = 0 for derivatives (no default-based expected loss in standard stress)
+        df = df.with_columns(pl.lit(0.0).alias(f"EL_{suffix}"))
+
     logger.info("F04 ST: Derivative stress: %d rows, 4 scenarios", len(df))
     return df

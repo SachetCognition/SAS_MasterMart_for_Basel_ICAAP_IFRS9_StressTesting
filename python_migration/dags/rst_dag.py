@@ -53,7 +53,7 @@ def run_pipeline(
     # Transform raw extracts
     nbmce_processed = f01_rst_nbmce.run(config, nbmce_raw)
     results["prty_processed"] = f02_rst_prty_inv_dev.run(config, prty_raw)
-    results["nbmce_joined"] = f03_join_nbmce.run(config, nbmce_processed, fact_rwa)
+    results["nbmce_joined"] = f03_join_nbmce.run(config, fact_rwa, nbmce_processed)
 
     # Parse parameters
     logger.info("RST DAG: Parse parameters")
