@@ -419,10 +419,16 @@ def apply_lookup(
     })
 
     # Join approach for large lookups
+    # Deduplicate after Utf8 cast to prevent row multiplication when
+    # different-typed keys stringify to the same value (e.g. int 1 and str "1").
+    lookup_df_cast = lookup_df.with_columns(
+        pl.col("_lkp_key").cast(pl.Utf8)
+    ).unique(subset=["_lkp_key"])
+
     result = (
         df.with_columns(pl.col(column).cast(pl.Utf8).alias("_lkp_src"))
         .join(
-            lookup_df.with_columns(pl.col("_lkp_key").cast(pl.Utf8)),
+            lookup_df_cast,
             left_on="_lkp_src",
             right_on="_lkp_key",
             how="left",

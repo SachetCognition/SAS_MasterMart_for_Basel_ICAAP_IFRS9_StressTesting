@@ -119,16 +119,22 @@ def _select_target_rating(df: pl.DataFrame, group_cols: list[str]) -> pl.DataFra
     # Use window functions to select the most conservative rating per group.
     # Most conservative = highest NOTCH.  On tie, prefer lower agency priority.
     # Polars group_by is hash-based and does NOT preserve sort order, so we
-    # use rank() over a window instead.
+    # use sort + row_number window instead.
+    # Negate _agency_pri so that lower priority values (more trusted) rank first
+    # when sorting descending.
     rated = rated.with_columns(
-        pl.struct(["NOTCH", "_agency_pri"])
-        .rank(method="ordinal", descending=True)
-        .over(valid_group)
-        .alias("_rank")
+        (-pl.col("_agency_pri")).alias("_neg_agency_pri")
+    )
+    rated = rated.sort(
+        valid_group + ["NOTCH", "_neg_agency_pri"],
+        descending=[False] * len(valid_group) + [True, True],
+    )
+    rated = rated.with_columns(
+        pl.lit(1).cum_count().over(valid_group).alias("_rank")
     )
 
     # Pick the top-ranked row per group (rank == 1 → highest NOTCH, lowest agency_pri on tie)
-    target = rated.filter(pl.col("_rank") == 1).drop("_rank")
+    target = rated.filter(pl.col("_rank") == 1).drop(["_rank", "_neg_agency_pri", "_agency_pri"])
 
     # Use _row_idx to mark ONLY the single target row per group
     target_indices = set(target["_row_idx"].to_list())

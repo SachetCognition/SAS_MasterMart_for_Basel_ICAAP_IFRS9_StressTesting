@@ -72,13 +72,17 @@ _RW_TO_NOTCH: dict[int, int] = {
 
 
 def _determine_ccy_group(df: pl.DataFrame) -> pl.DataFrame:
-    """Assign CCY_GROUP based on currency code."""
-    if "CCY" not in df.columns:
+    """Assign CCY_GROUP based on currency code.
+
+    Handles both ``CCY`` and ``CCY_CD`` column names (IW data uses CCY_CD).
+    """
+    ccy_col = "CCY" if "CCY" in df.columns else ("CCY_CD" if "CCY_CD" in df.columns else None)
+    if ccy_col is None:
         return df.with_columns(pl.lit("OTHER").alias("CCY_GROUP"))
 
     # Build replacement mapping
     return df.with_columns(
-        pl.col("CCY").cast(pl.Utf8).str.to_uppercase()
+        pl.col(ccy_col).cast(pl.Utf8).str.to_uppercase()
         .replace(_CCY_GROUP, default="OTHER")
         .alias("CCY_GROUP")
     )

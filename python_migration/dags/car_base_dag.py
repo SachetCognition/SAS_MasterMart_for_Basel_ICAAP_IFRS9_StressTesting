@@ -94,8 +94,17 @@ def run_pipeline(config: Config, datasets: dict[str, pl.DataFrame]) -> dict[str,
     stg_derv = f03_derivative.run(config, xls_derv)
     sgp_imex = datasets.get("sgp_imex", pl.DataFrame())
     err_master_df = xls_err.get("xls_st_manual_master", pl.DataFrame())
+
+    # Build customer elimination sets from IW extract for inter-company elimination
+    from lib.lookups import build_cust_elim_format
+
+    cust_elim_df = datasets.get("vi_iacbs_cust_elim_upd", pl.DataFrame())
+    cust_elim_set = build_cust_elim_format(cust_elim_df) if not cust_elim_df.is_empty() else set()
+
     stg_adj = f04_iw_adj.run(
         config, car_iw_combined, sgp_imex, err_master_df,
+        cust_elim_combined=cust_elim_set,
+        cust_elim_consolid=cust_elim_set,
     )
     stg_sgp = f05_sgp_xls.run(config, datasets)
     stg_nostro = f06_sgp_nostro.run(config, datasets.get("sgp_nostro", pl.DataFrame()))
@@ -128,7 +137,10 @@ def run_pipeline(config: Config, datasets: dict[str, pl.DataFrame]) -> dict[str,
     staging.update(stg_adj_delta)          # adj_delta_3, adj_delta_5, ...
     staging.update(stg_ns_delta)           # nonsystem delta keys
     staging.update(stg_hkcbf)              # car_hkcbf_adj, adj_ns_hkcbf_delta
-    staging.update(rating_lookups)
+    # Only add DataFrame values from rating_lookups to staging (skip dict lookups)
+    for k, v in rating_lookups.items():
+        if isinstance(v, pl.DataFrame):
+            staging[k] = v
 
     # PART 4: Load to FACT
     logger.info("CAR_BASE DAG: PART 4 - Load to FACT")
