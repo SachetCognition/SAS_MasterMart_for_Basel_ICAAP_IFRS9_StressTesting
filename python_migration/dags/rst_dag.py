@@ -68,25 +68,25 @@ def run_pipeline(
     stressed: dict[str, pl.DataFrame] = {}
 
     stressed["rml"] = f06_rst_rml.run(
-        config, segments.get("HK_RML", pl.DataFrame()), params,
+        config, segments.get("rst_hk_rml", pl.DataFrame()), params,
     )
     stressed["prop_invdev"] = f07_rst_prop_invdev.run(
-        config, segments.get("PRTY_INV", pl.DataFrame()), params,
+        config, segments.get("rst_prty_inv", pl.DataFrame()), params,
     )
     stressed["bank_fi"] = f08_rst_bank_fi.run(
-        config, segments.get("BANK_FI", pl.DataFrame()), params, master_scale_pd,
+        config, segments.get("rst_bank_fi", pl.DataFrame()), params, master_scale_pd,
     )
     stressed["derivative"] = f09_rst_derivative.run(
-        config, segments.get("DERI", pl.DataFrame()), params,
+        config, segments.get("rst_deri", pl.DataFrame()), params,
     )
     stressed["nbmce"] = f10_rst_nbmce.run(
-        config, segments.get("NBMCE", pl.DataFrame()), params,
+        config, segments.get("rst_nbmce", pl.DataFrame()), params,
     )
 
     # Other segments
     for seg_name in ["PASTDUE", "OTH"]:
         stressed[seg_name.lower()] = f11_rst_other.run(
-            config, segments.get(seg_name, pl.DataFrame()), params,
+            config, segments.get(f"rst_{seg_name.lower()}", pl.DataFrame()), params,
         )
 
     # Combine

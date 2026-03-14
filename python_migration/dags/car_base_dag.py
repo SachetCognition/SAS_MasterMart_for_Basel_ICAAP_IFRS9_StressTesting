@@ -93,7 +93,7 @@ def run_pipeline(config: Config, datasets: dict[str, pl.DataFrame]) -> dict[str,
 
     stg_derv = f03_derivative.run(config, xls_derv)
     sgp_imex = datasets.get("sgp_imex", pl.DataFrame())
-    err_master_df = xls_err.get("manual_adj", pl.DataFrame())
+    err_master_df = xls_err.get("xls_st_manual_master", pl.DataFrame())
     stg_adj = f04_iw_adj.run(
         config, car_iw_combined, sgp_imex, err_master_df,
     )
@@ -115,17 +115,19 @@ def run_pipeline(config: Config, datasets: dict[str, pl.DataFrame]) -> dict[str,
     stg_ref = f12_ref_list_from_bu.run(config, xls_ref, datasets)
 
     # Collect all staging datasets
-    staging = {
+    # Modules returning dict must be flattened so l01_fact_rwa can find
+    # individual keys like "adj_sgp_imex", "adj_delta_3", etc.
+    staging: dict[str, pl.DataFrame] = {
         "car_iw_adj": stg_adj,
-        "adj_sgp": stg_sgp,
-        "adj_sgp_nostro": stg_nostro,
-        "adj_delta": stg_adj_delta,
-        "adj_ns_delta": stg_ns_delta,
-        "car_hkcbf_adj": stg_hkcbf,
-        "car_sz_adj": stg_cbic,
         "adj_derv_delta": stg_derv,
-        "ref_list": stg_ref,
+        "car_sz_adj": stg_cbic,
+        "ref_list": stg_ref if isinstance(stg_ref, pl.DataFrame) else pl.DataFrame(),
     }
+    staging.update(stg_sgp)                # adj_sgp_imex, adj_sgp_mm, ...
+    staging["adj_sgp_nostro_tb"] = stg_nostro
+    staging.update(stg_adj_delta)          # adj_delta_3, adj_delta_5, ...
+    staging.update(stg_ns_delta)           # nonsystem delta keys
+    staging.update(stg_hkcbf)              # car_hkcbf_adj, adj_ns_hkcbf_delta
     staging.update(rating_lookups)
 
     # PART 4: Load to FACT

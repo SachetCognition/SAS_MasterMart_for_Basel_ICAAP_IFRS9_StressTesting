@@ -55,23 +55,23 @@ def run_pipeline(
     stressed: dict[str, pl.DataFrame] = {}
 
     stressed["bank_fi"] = f03_st_bank_fi.run(
-        config, segments.get("bank_fi", pl.DataFrame()), params, master_scale_pd,
+        config, segments.get("st_bank_fi", pl.DataFrame()), params, master_scale_pd,
     )
     stressed["derivative"] = f04_st_derivative.run(
-        config, segments.get("derivative", pl.DataFrame()), params,
+        config, segments.get("st_derivative", pl.DataFrame()), params,
     )
     stressed["rml"] = f05_st_rml.run(
-        config, segments.get("rml", pl.DataFrame()), params, npl_ratios or {},
+        config, segments.get("st_rml", pl.DataFrame()), params, npl_ratios or {},
     )
 
     # Other segments (sovereign, cash, past_due, exception)
     for seg_name in ["sovereign_pse_mdb", "cash", "past_due", "exception"]:
         stressed[seg_name] = f06_st_other.run(
-            config, segments.get(seg_name, pl.DataFrame()), params,
+            config, segments.get(f"st_{seg_name}", pl.DataFrame()), params,
         )
 
     stressed["non_rml"] = f07_st_nonrml.run(
-        config, segments.get("non_rml", pl.DataFrame()), params, npl_ratios or {},
+        config, segments.get("st_non_rml", pl.DataFrame()), params, npl_ratios or {},
     )
 
     # Combine
