@@ -80,6 +80,11 @@ def run(config: Config, fact_rwa: pl.DataFrame) -> dict[str, pl.DataFrame]:
             oth_mask = oth_mask & (fact_rwa["IND_PROPERTY_INV_n_DEV"] != 1)
         if "IND_NBMCE_GRP" in fact_rwa.columns:
             oth_mask = oth_mask & (fact_rwa["IND_NBMCE_GRP"] != 1)
+        # Add back CBIC records with PORT_CD='IX' that were excluded from HK_RML
+        # but also excluded from OTH because 'IX' is in all_assigned.
+        if "FILE_SRC" in fact_rwa.columns:
+            cbic_ix_mask = (fact_rwa[port_col] == "IX") & (fact_rwa["FILE_SRC"] == "CBIC")
+            oth_mask = oth_mask | cbic_ix_mask
         oth_df = fact_rwa.filter(oth_mask)
     else:
         oth_df = pl.DataFrame()

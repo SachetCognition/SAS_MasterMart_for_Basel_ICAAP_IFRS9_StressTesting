@@ -72,6 +72,10 @@ def _assign_notch(df: pl.DataFrame) -> pl.DataFrame:
         pl.col("ECAI_RATING").str.to_uppercase().alias("_rating_clean")
     )
 
+    # Drop existing NOTCH column to avoid collision with the mapped one
+    if "NOTCH" in df.columns:
+        df = df.drop("NOTCH")
+
     result = df.join(
         map_df.select(["_rating_clean", "NOTCH"]),
         on="_rating_clean",
