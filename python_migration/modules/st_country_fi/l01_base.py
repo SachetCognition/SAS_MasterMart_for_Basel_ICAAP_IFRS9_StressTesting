@@ -104,7 +104,7 @@ def run(
         )
 
     # FLAG_ELIM from cust_elim format
-    elim_set = build_cust_elim_format(cust_elim) if not cust_elim.is_empty() else set()
+    elim_set = build_cust_elim_format(cust_elim) if cust_elim is not None and not cust_elim.is_empty() else set()
     if elim_set and "CUST_SEC_ID" in df.columns:
         df = df.with_columns(
             pl.when(pl.col("CUST_SEC_ID").is_in(list(elim_set)))

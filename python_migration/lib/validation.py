@@ -226,7 +226,9 @@ class PipelineValidator:
                             relative_diff = pl.Series(
                                 "rel_diff",
                                 [
-                                    (d / sa) if sa > 0 else d
+                                    (d / sa)
+                                    if sa is not None and d is not None and sa > 0
+                                    else (d if d is not None else 0.0)
                                     for d, sa in zip(diff.to_list(), s_abs.to_list())
                                 ],
                             )

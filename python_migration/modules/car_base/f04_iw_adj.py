@@ -295,17 +295,21 @@ def run(
         df = _consolidated_elimination(df, cust_elim_consolid)
 
     # 8. Dynamic error adjustments
-    ea_codes = ["EA3_0", "EA8_0", "EA8_1", "EA104", "EA202", "EA203"]
-    for ea_code in ea_codes:
-        adj_dict = error_adjustment(
-            err_tbl=err_master,
-            tbl="CAR",
-            mode=ea_code,
-            dt_rpt_month=config.dt_rpt_month,
-        )
-        if adj_dict:
-            df = apply_error_adjustments(df, adj_dict)
-            logger.info("Applied error adjustment %s (%d rules)", ea_code, len(adj_dict))
+    # In SAS, %ErrAdj is called with mode='U' (Update) and the EA codes are adj_no
+    # values, not Mode values.  Fetch all Update adjustments for CAR table once,
+    # then filter by the specific adj_no codes.
+    ea_codes = {"EA3_0", "EA8_0", "EA8_1", "EA104", "EA202", "EA203"}
+    all_adj = error_adjustment(
+        err_tbl=err_master,
+        tbl="CAR",
+        mode="U",
+        dt_rpt_month=config.dt_rpt_month,
+    )
+    if all_adj:
+        for adj_no, details in all_adj.items():
+            if adj_no in ea_codes:
+                df = apply_error_adjustments(df, {adj_no: details})
+                logger.info("Applied error adjustment %s (%d rules)", adj_no, len(details))
 
     logger.info("F04 IW Adj: Final dataset has %d rows", len(df))
     return df
