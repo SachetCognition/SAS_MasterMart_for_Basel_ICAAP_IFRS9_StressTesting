@@ -24,10 +24,10 @@ _SEGMENT_RULES: list[tuple[str, list[str]]] = [
     ("SOVEREIGN_PSE_MDB", ["01.", "02.", "03."]),
     ("CASH", ["12."]),
     ("PAST_DUE", ["10."]),
-    ("BANK_FI", ["04."]),
-    ("RML", ["05."]),
-    ("DERIVATIVE", ["06."]),
-    ("NON_RML", ["08.", "09."]),
+    ("BANK_FI", ["04.", "05."]),
+    ("RML", ["09."]),
+    ("DERIVATIVE", []),  # derivatives handled via PORT_CD B14-B18, not ICAAP_PORTCD_DESC prefix
+    ("NON_RML", ["06.", "07.", "08."]),
     ("EXCEPTION", ["11.", "99."]),
 ]
 
@@ -71,6 +71,14 @@ def run(config: Config, fact_rwa: pl.DataFrame) -> dict[str, pl.DataFrame]:
                     .then(pl.lit(seg_name))
                     .otherwise(segment_expr)
                 )
+        # Off-balance derivative PORT_CDs (B14-B18) don't appear in PORTCD_MAP
+        # and get default "99. ###" — override to DERIVATIVE via PORT_CD check
+        if "PORT_CD" in fact_rwa.columns:
+            segment_expr = (
+                pl.when(pl.col("PORT_CD").cast(pl.Utf8).is_in(list(_OFFBAL_SEGMENTS.keys())))
+                .then(pl.lit("DERIVATIVE"))
+                .otherwise(segment_expr)
+            )
         fact_rwa = fact_rwa.with_columns(segment_expr.alias("ST_SEGMENT"))
     elif "PORT_CD" in fact_rwa.columns:
         # Fallback: use PORT_CD directly

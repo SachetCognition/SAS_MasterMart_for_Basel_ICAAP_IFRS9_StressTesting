@@ -221,7 +221,15 @@ class PipelineValidator:
                             comp.max_abs_diff = diff.max()
 
                             # Count mismatches beyond tolerance
-                            relative_diff = pl.when(s.abs() > 0).then(diff / s.abs()).otherwise(diff)
+                            # Use Series ops instead of pl.when (which expects Expr, not Series)
+                            s_abs = s.abs()
+                            relative_diff = pl.Series(
+                                "rel_diff",
+                                [
+                                    (d / sa) if sa > 0 else d
+                                    for d, sa in zip(diff.to_list(), s_abs.to_list())
+                                ],
+                            )
                             mismatches = relative_diff.filter(relative_diff > tolerance)
                             comp.mismatch_count = len(mismatches)
                             comp.mismatch_pct = comp.mismatch_count / min_len if min_len > 0 else 0

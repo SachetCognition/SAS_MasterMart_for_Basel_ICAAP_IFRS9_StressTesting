@@ -74,7 +74,7 @@ def run(config: Config, csrbb_base: pl.DataFrame) -> dict[str, pl.DataFrame]:
         agg_a2: list[pl.Expr] = [pl.len().alias("COUNT")]
         if ead_col in csrbb_rw.columns:
             agg_a2.append(pl.col(ead_col).sum().alias("SUM_EAD"))
-        if rwa_col in csrbb_rw.columns:
+        if rwa_col and rwa_col in csrbb_rw.columns:
             agg_a2.append(pl.col(rwa_col).sum().alias("SUM_RWA"))
 
         a2 = csrbb_rw.group_by("RW_BUCKET").agg(agg_a2).sort("RW_BUCKET")
