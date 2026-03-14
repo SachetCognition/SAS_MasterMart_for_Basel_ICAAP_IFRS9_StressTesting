@@ -50,7 +50,7 @@ def _parse_port_code(port_str: str) -> tuple[str, str]:
         return port_cd, exp_ref
     else:
         port_cd = port_str[:3]
-        exp_ref = port_str[4:] if len(port_str) > 4 else ""
+        exp_ref = port_str[3:] if len(port_str) > 3 else ""
         return port_cd, exp_ref
 
 

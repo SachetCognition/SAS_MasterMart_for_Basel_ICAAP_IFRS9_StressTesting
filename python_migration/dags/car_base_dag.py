@@ -112,7 +112,7 @@ def run_pipeline(config: Config, datasets: dict[str, pl.DataFrame]) -> dict[str,
         xls_rating.get("cc_rating", pl.DataFrame()),
         xls_rating.get("bonds_rating", pl.DataFrame()),
     )
-    stg_ref = f12_ref_list_from_bu.run(config, xls_ref, datasets)
+    stg_ref = f12_ref_list_from_bu.run(config, xls_ref, car_iw_adj=stg_adj)
 
     # Collect all staging datasets
     # Modules returning dict must be flattened so l01_fact_rwa can find
