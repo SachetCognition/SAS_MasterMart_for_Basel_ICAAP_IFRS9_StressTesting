@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  pipeline:
+    build: .
+    volumes:
+      - ./config:/app/config
+      - ./artifacts:/app/artifacts
+      - ../Data:/app/Data:ro
+    environment:
+      - ORACLE_DSN=${ORACLE_DSN:-}
+      - ORACLE_USER=${ORACLE_USER:-}
+      - ORACLE_PASSWORD=${ORACLE_PASSWORD:-}
+    command: ["python", "-c", "from dags.car_base_dag import run_pipeline; print('Pipeline ready')"]
+
+  test:
+    build: .
+    volumes:
+      - ./tests:/app/tests
+      - ./artifacts:/app/artifacts
+    command: ["python", "-m", "pytest", "tests/", "-v", "--tb=short"]

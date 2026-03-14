@@ -1,0 +1,45 @@
+# =============================================================================
+# SAS MasterMart Migration - Configuration
+# Translated from: 00. STARTSCRIPT.sas (lines 13-65)
+# =============================================================================
+
+# Reporting month in YYYYMM format. If blank, defaults to previous month end.
+rpt_month: "201412"
+
+# ICAAP indicator (blank = standard run)
+ind_icaap: ""
+
+# Excel-to-SAS date offset
+# 01Jan1990 in Excel = 32874 while in SAS = 10958
+# 28Mar2013 in Excel = 41361 while in SAS = 19445
+# Difference = 21916
+dt_f_x2s: 21916
+
+paths:
+  # Network share paths (original SAS paths for reference)
+  base: "//ckwb610/Credit Data & Model/Credit Risk, Economic Capital & Models/STRESS TEST"
+  pbg: "//ckwb505/aps-data/Yvonne_V/SAS_Data_V8"
+  ccd: "//cf-smesas/creditcard$/HLee/data/portfolio segment"
+  aps: "//cf-smesas/creditcard$/new aps/history/backup"
+  cardlink: "//cf-smesas/CreditCard$/Cardlink/history/master"
+
+data_layers:
+  input_xls: "{root}/Data/0.INPUT_XLS"
+  input_xlssiw: "{root}/Data/0.INPUT_XLSSIW"
+  siw: "{root}/Data/1.SIW"
+  staging: "{root}/Data/2.STAGING"
+  fact: "{root}/Data/3.FACT"
+  mart: "{root}/Data/4.MART"
+  report: "{root}/Report"
+
+oracle:
+  dsn: "iw_connection_string"
+  pool_min: 2
+  pool_max: 10
+  pool_increment: 1
+
+# Parallel extraction settings
+extraction:
+  batch_size: 10000
+  max_workers: 4
+  entities: ["kw", "cf", "sz", "vc"]
