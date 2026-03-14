@@ -37,6 +37,24 @@ _DATE_TYPE1_KEYWORDS = frozenset({
 # Date type 2 columns (ISO format dates)
 _DATE_TYPE2_KEYWORDS = frozenset({"OS_DATE"})
 
+
+def _classify_column_type(column_name: str) -> str:
+    """
+    Classify a column as numeric, date1, date2, or string based on keyword matching.
+
+    Used internally by :func:`import_sgp_excel` for dynamic column typing.
+    Extracted as a standalone function for testability.
+    """
+    upper = column_name.upper()
+    if any(kw in upper for kw in _NUMERIC_KEYWORDS):
+        return "numeric"
+    if upper in _DATE_TYPE1_KEYWORDS:
+        return "date1"
+    if upper in _DATE_TYPE2_KEYWORDS:
+        return "date2"
+    return "string"
+
+
 # Type-specific row filters
 _TYPE_FILTERS: dict[str, str] = {
     "IMEX": "CURR",
@@ -265,11 +283,12 @@ def import_multi_sheet(
         logger.info("Importing sheet '%s' from %s -> %s", sheet_name, path, output_name)
 
         try:
+            read_kwargs = {k: v for k, v in config.items() if k != "sheet"}
             df = pl.read_excel(
                 source=path,
                 sheet_name=sheet_name,
                 engine="openpyxl",
-                **config,
+                **read_kwargs,
             )
             results[output_name] = df
             logger.info("  -> %d rows, %d columns", len(df), len(df.columns))

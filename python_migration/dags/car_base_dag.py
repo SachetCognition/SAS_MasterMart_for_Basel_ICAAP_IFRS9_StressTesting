@@ -79,16 +79,32 @@ def run_pipeline(config: Config, datasets: dict[str, pl.DataFrame]) -> dict[str,
     # PART 3: Formulate & Transform
     logger.info("CAR_BASE DAG: PART 3 - Formulate & Transform")
     stg_iw = f00_iw_to_stg.run(config, datasets)
+
+    # Extract combined CAR DataFrame from per-entity results
+    # f00_iw_to_stg returns dict; downstream modules need a single DataFrame
+    rpt = config.rpt_month
+    car_frames = [
+        stg_iw[f"vi_iambs_{e}_car_{rpt}"]
+        for e in ["kw", "vc", "cf", "sz"]
+        if f"vi_iambs_{e}_car_{rpt}" in stg_iw
+        and not stg_iw[f"vi_iambs_{e}_car_{rpt}"].is_empty()
+    ]
+    car_iw_combined = pl.concat(car_frames, how="diagonal") if car_frames else pl.DataFrame()
+
     stg_derv = f03_derivative.run(config, xls_derv)
     sgp_imex = datasets.get("sgp_imex", pl.DataFrame())
+    err_master_df = xls_err.get("manual_adj", pl.DataFrame())
     stg_adj = f04_iw_adj.run(
-        config, stg_iw, sgp_imex,
-        xls_err.get("manual_adj", pl.DataFrame()),
+        config, car_iw_combined, sgp_imex, err_master_df,
     )
     stg_sgp = f05_sgp_xls.run(config, datasets)
     stg_nostro = f06_sgp_nostro.run(config, datasets.get("sgp_nostro", pl.DataFrame()))
-    stg_adj_delta = f07_adj_delta.run(config, stg_iw, stg_adj)
-    stg_ns_delta = f08_nonsys_delta.run(config, xls_nonsys)
+    stg_adj_delta = f07_adj_delta.run(config, err_master_df)
+    stg_ns_delta = f08_nonsys_delta.run(
+        config,
+        xls_nonsys.get("nonsystem", pl.DataFrame()),
+        xls_nonsys.get("ns_hkcbf", pl.DataFrame()),
+    )
     stg_hkcbf = f09_hkcbf_adj_n_delta.run(config, stg_adj)
     stg_cbic = f10_cbic_adj.run(config, stg_adj)
     rating_lookups = f11_ccp_bonds_rating.run(

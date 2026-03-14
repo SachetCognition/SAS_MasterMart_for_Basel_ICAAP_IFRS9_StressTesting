@@ -34,7 +34,7 @@ def test_port_rw_map():
 def test_apply_lookup():
     """apply_lookup maps values correctly."""
     df = pl.DataFrame({"PORT_CD": ["Ia", "IV", "UNKNOWN"]})
-    result = apply_lookup(df, "PORT_CD", PORTCD_MAP, default="99. ###")
+    result = apply_lookup(df, "PORT_CD", PORTCD_MAP, output_column="PORT_CD_MAPPED", default="99. ###")
     vals = result["PORT_CD_MAPPED"].to_list()
     assert vals[0] == "01. Sovereign"
     assert vals[1] == "04. Bank"

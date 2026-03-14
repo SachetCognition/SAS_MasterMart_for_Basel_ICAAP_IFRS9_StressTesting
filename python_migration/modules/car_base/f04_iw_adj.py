@@ -85,10 +85,10 @@ def _adj_3(df: pl.DataFrame) -> pl.DataFrame:
         & (pl.col("PORT_CD") == "Ia")
         & (pl.col(entity_col).is_in(["NYBR", "LABR"]))
     )
+    count = df.filter(cond).height
     df = df.with_columns(
         pl.when(cond).then(pl.lit("IV")).otherwise(pl.col("PORT_CD")).alias("PORT_CD")
     )
-    count = df.filter(cond).height
     logger.info("Adj 3: Reclassed %d NY/LA records Ia→IV", count)
     return df
 
@@ -107,10 +107,10 @@ def _adj_5(df: pl.DataFrame) -> pl.DataFrame:
         (pl.col("PORT_CD") == "VI")
         & (pl.col("RC_CD").cast(pl.Utf8).str.to_uppercase().str.contains("CC"))
     )
+    count = df.filter(cond).height
     df = df.with_columns(
         pl.when(cond).then(pl.lit("VIIIa")).otherwise(pl.col("PORT_CD")).alias("PORT_CD")
     )
-    count = df.filter(cond).height
     logger.info("Adj 5: Reclassed %d credit card records VI→VIIIa", count)
     return df
 
@@ -129,10 +129,10 @@ def _adj_6(df: pl.DataFrame) -> pl.DataFrame:
         (pl.col("PORT_CD") == "IX")
         & (pl.col("APPL_RISK_WEIGHT") == 50)
     )
+    count = df.filter(cond).height
     df = df.with_columns(
         pl.when(cond).then(pl.lit(35.0)).otherwise(pl.col("APPL_RISK_WEIGHT")).alias("APPL_RISK_WEIGHT")
     )
-    count = df.filter(cond).height
     logger.info("Adj 6: Reclassed %d MPA records from 50%%→35%% RW", count)
     return df
 
@@ -157,10 +157,10 @@ def _adj_8(df: pl.DataFrame) -> pl.DataFrame:
         (pl.col("PORT_CD") == "IV")
         & (pl.col(st_col) == "Y")
     )
+    count = df.filter(cond).height
     df = df.with_columns(
         pl.when(cond).then(pl.lit("IVa")).otherwise(pl.col("PORT_CD")).alias("PORT_CD")
     )
-    count = df.filter(cond).height
     logger.info("Adj 8: Reclassed %d short-term bank exposures IV→IVa", count)
     return df
 

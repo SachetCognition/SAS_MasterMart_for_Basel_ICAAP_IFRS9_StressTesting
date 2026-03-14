@@ -97,10 +97,13 @@ def _select_target_rating(df: pl.DataFrame, group_cols: list[str]) -> pl.DataFra
     if not valid_group:
         return df
 
+    # Add row index for unique identification when joining back
+    df = df.with_row_index("_row_idx")
+
     # Filter out rows with missing NOTCH
     rated = df.filter(pl.col("NOTCH").is_not_null())
     if rated.is_empty():
-        return df.with_columns(pl.lit(0).alias("flag_target"))
+        return df.with_columns(pl.lit(0).alias("flag_target")).drop("_row_idx")
 
     # Add agency priority
     if "RATING_AGENCY" in rated.columns:
@@ -118,17 +121,15 @@ def _select_target_rating(df: pl.DataFrame, group_cols: list[str]) -> pl.DataFra
 
     # Pick the last per group (highest NOTCH = most conservative)
     target = rated.group_by(valid_group).last()
-    target = target.with_columns(pl.lit(1).alias("flag_target"))
 
-    # Join back to mark target rows
-    result = df.join(
-        target.select(valid_group + ["flag_target"]),
-        on=valid_group,
-        how="left",
-    )
-    result = result.with_columns(
-        pl.col("flag_target").fill_null(0)
-    )
+    # Use _row_idx to mark ONLY the single target row per group
+    target_indices = set(target["_row_idx"].to_list())
+    result = df.with_columns(
+        pl.when(pl.col("_row_idx").is_in(list(target_indices)))
+        .then(1)
+        .otherwise(0)
+        .alias("flag_target")
+    ).drop("_row_idx")
 
     return result
 

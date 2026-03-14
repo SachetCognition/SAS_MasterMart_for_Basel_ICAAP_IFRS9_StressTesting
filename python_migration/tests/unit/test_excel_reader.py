@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from lib.excel_reader import _classify_column_type
+from lib.excel_reader import _classify_column_type  # noqa: E402
 
 
 def test_classify_numeric_columns():
