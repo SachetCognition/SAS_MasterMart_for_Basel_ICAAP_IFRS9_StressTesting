@@ -299,12 +299,15 @@ def run(
     # values, not Mode values.  Fetch all Update adjustments for CAR table once,
     # then filter by the specific adj_no codes.
     ea_codes = {"EA3_0", "EA8_0", "EA8_1", "EA104", "EA202", "EA203"}
-    all_adj = error_adjustment(
-        err_tbl=err_master,
-        tbl="CAR",
-        mode="U",
-        dt_rpt_month=config.dt_rpt_month,
-    )
+    required_cols = {"IW_Table", "Mode", "adj_no", "eff_from", "eff_to", "Detail"}
+    all_adj: dict[str, list[str]] = {}
+    if not err_master.is_empty() and required_cols.issubset(set(err_master.columns)):
+        all_adj = error_adjustment(
+            err_tbl=err_master,
+            tbl="CAR",
+            mode="U",
+            dt_rpt_month=config.dt_rpt_month,
+        )
     if all_adj:
         for adj_no, details in all_adj.items():
             if adj_no in ea_codes:

@@ -147,29 +147,57 @@ def _apply_guarantor_fallback(df: pl.DataFrame, notch_cc_map: dict[str, int]) ->
     """
     Guarantor rating fallback: if NOTCH is missing but guarantor has rating,
     use guarantor's NOTCH.
+
+    The ``notch_cc_map`` is keyed by ``RM_CUST_ID + CCY_GROUP``, but
+    guarantor data provides ``GUARTOR_CUST_SEC_ID`` (a different identifier).
+    We build a ``CUST_SEC_ID → RM_CUST_ID`` mapping from the fact table
+    itself (which carries both columns) so we can convert the guarantor's
+    ``CUST_SEC_ID`` to the corresponding ``RM_CUST_ID`` before lookup.
     """
     if not notch_cc_map or "GUARTOR_CUST_SEC_ID" not in df.columns:
         return df
+    if "CCY_GROUP" not in df.columns:
+        return df
 
-    # Build guarantor lookup key
-    guartor_map: dict[str, int] = {}
-    for key, notch in notch_cc_map.items():
-        # Extract cust_id part (key = RM_CUST_ID + CCY_GROUP)
-        guartor_map[key] = notch
+    # Build CUST_SEC_ID → RM_CUST_ID mapping from the fact table so we can
+    # convert GUARTOR_CUST_SEC_ID to the guarantor's RM_CUST_ID for lookup.
+    if "CUST_SEC_ID" in df.columns and "RM_CUST_ID" in df.columns:
+        mapping_rows = (
+            df.select(["CUST_SEC_ID", "RM_CUST_ID"])
+            .unique()
+            .filter(pl.col("CUST_SEC_ID").is_not_null() & pl.col("RM_CUST_ID").is_not_null())
+        )
+        cust_map: dict[str, str] = {}
+        for row in mapping_rows.iter_rows(named=True):
+            cust_map[str(row["CUST_SEC_ID"])] = str(row["RM_CUST_ID"])
 
-    if "CCY_GROUP" in df.columns:
+        sec_id_to_rm = pl.DataFrame({
+            "_g_sec_id": list(cust_map.keys()),
+            "_g_rm_id": list(cust_map.values()),
+        })
+        df = df.with_columns(
+            pl.col("GUARTOR_CUST_SEC_ID").cast(pl.Utf8).fill_null("").alias("_g_sec_id")
+        )
+        df = df.join(sec_id_to_rm, on="_g_sec_id", how="left")
+        # Build lookup key: guarantor RM_CUST_ID + CCY_GROUP
+        df = df.with_columns(
+            (pl.col("_g_rm_id").fill_null("") + pl.col("CCY_GROUP").cast(pl.Utf8))
+            .alias("_guartor_key")
+        )
+        df = df.drop(["_g_sec_id", "_g_rm_id"])
+    else:
+        # Fallback: use GUARTOR_CUST_SEC_ID directly (may not match)
         df = df.with_columns(
             (pl.col("GUARTOR_CUST_SEC_ID").cast(pl.Utf8).fill_null("") + pl.col("CCY_GROUP").cast(pl.Utf8))
             .alias("_guartor_key")
         )
 
-        map_df = pl.DataFrame({
-            "_guartor_key": list(guartor_map.keys()),
-            "NOTCH_GUARTOR": list(guartor_map.values()),
-        })
+    map_df = pl.DataFrame({
+        "_guartor_key": list(notch_cc_map.keys()),
+        "NOTCH_GUARTOR": list(notch_cc_map.values()),
+    })
 
-        df = df.join(map_df, on="_guartor_key", how="left").drop("_guartor_key")
-
+    df = df.join(map_df, on="_guartor_key", how="left").drop("_guartor_key")
     return df
 
 

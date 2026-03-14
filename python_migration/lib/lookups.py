@@ -303,7 +303,7 @@ def build_rw_long_format(xls_master_scale_pd: pl.DataFrame) -> dict[int, float]:
     result: dict[int, float] = {}
     for row in xls_master_scale_pd.iter_rows(named=True):
         notch = row.get("NOTCH")
-        rw = row.get("rw_long") or row.get("RW_LONG")
+        rw = row.get("rw_long") if row.get("rw_long") is not None else row.get("RW_LONG")
         if notch is not None and rw is not None:
             result[int(notch)] = float(rw)
     logger.info("build_rw_long_format: %d entries", len(result))
@@ -326,7 +326,7 @@ def build_rw_short_format(xls_master_scale_pd: pl.DataFrame) -> dict[int, float]
     result: dict[int, float] = {}
     for row in xls_master_scale_pd.iter_rows(named=True):
         notch = row.get("NOTCH")
-        rw = row.get("rw_short") or row.get("RW_SHORT")
+        rw = row.get("rw_short") if row.get("rw_short") is not None else row.get("RW_SHORT")
         if notch is not None and rw is not None:
             result[int(notch)] = float(rw)
     logger.info("build_rw_short_format: %d entries", len(result))
